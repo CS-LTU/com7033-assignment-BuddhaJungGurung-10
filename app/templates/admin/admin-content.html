@@ -1,0 +1,92 @@
+{% extends "base.html" %} 
+
+{% block title %} | Dashboard{% endblock %} 
+
+{% block content %}
+
+{% include "navbar.html" %} 
+
+{% include "alert-message.html" %}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Welcome, {{ current_user.username }}!</h2>
+    <p>This is the admin dashboard where you can manage users.</p>
+
+    <!-- register a new user -->
+    <a href="" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#registerModal">Register New User</a>
+    
+    <!-- list of users -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Username</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <!-- user listing -->
+                {% for user in users %}
+                <tr>
+                    <th scope="row">{{ user.id }}</th>
+                    <td>{{ user.username }}</td>
+                    <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                    <td>{{ user.role | capitalize }}</td>
+                    <td>
+                        {% if user.role != "admin" %}
+                        <form method="POST" action="{{ url_for('auth.delete_user', user_id=user.id) }}">
+                            <!-- CSRF protection token to prevent CSRF attacks when deleting a user -->
+                            {{ user_delete_form.hidden_tag() }}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('auth.register') }}">
+
+                {{ user_register_form.hidden_tag() }}
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="registerModalLabel">Register New User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    {% for field in user_register_form %} 
+                        {% if not field.flags.hidden and field.type !='SubmitField' %}
+                            <div class="mb-3">
+                                {{ field.label(class="form-label") }} {{ field(class="form-control", placeholder="Enter " ~ field.label.text) }} 
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    {{ user_register_form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %} 
