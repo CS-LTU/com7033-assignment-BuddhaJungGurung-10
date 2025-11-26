@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %} | {{ record.id }} | Detail{% endblock %}
+
+{% block content %}
+{% include "navbar.html" %}
+
+{% include "alert-message.html" %}
+
+<div class="container mt-4 ">
+    <a href="{{ url_for('home.index') }}" class="btn btn-secondary mb-3">  Back</a>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <h2>Patient Details</h2>
+            <p>Details for patient ID: <b>{{ record.id }}</b></p>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-3">
+            <button class="btn btn-primary" id="updateButton">Update</button>
+            {% if current_user.role == "admin" %}
+                <form action="{{ url_for('home.delete_patient_record', patient_id=record.id) }}" method="POST" class="d-inline">
+                    {{ delete_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card p-3 shadow-sm mb-4">
+        <!-- <form id="patientDetailForm" action="{{ url_for('home.update_patient_record', patient_id=record.id) }}" method="POST">
+            {{ form.hidden_tag() }}
+            {% for key, value in record.items() %}
+            {% if key != 'id' and key != '_id' %}
+            <div class="mb-3 row">
+
+                <label class="col-sm-3 col-form-label">{{ key | capitalize }}</label>
+                <div class="col-sm-9">
+                    {% if key in categorical_entries %}
+                    <select name="{{ key }}" class ="form-select" required disabled>
+                        {% for option in categorical_entries[key] %}
+                        <option value="{{ option }}" {% if option == value %} selected {% endif %}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                        <input type="text" required readonly class="form-control bg-light" value="{{ value }}">
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+        <div id="commitButttonsSection" class="d-none mt-5 gap-2 justify-content-end">
+            <button type="submit" value="save" class="btn btn-success" id="saveChanges">Save Changes</button>
+            <button type="button" value="cancel" class="btn btn-secondary" id="cancelChanges">Cancel</button>
+
+        </div>
+        </form> -->
+
+        <form action="{{ url_for('home.update_patient_record', patient_id=record.id) }}" method="POST" id="patientDetailForm">
+            {{ form.hidden_tag() }}
+            {{ form.id(value=record.id, type="hidden") }}
+            {% for field in form %}
+                {% if field.name != 'csrf_token' and field.name != 'submit' and field.name != 'id' %}
+
+                <div class="mb-3 row">
+                    <label class="col-sm-3 col-form-label">{{ field.label.text }}</label>
+                    <div class="col-sm-9">
+                        {% if field.type == 'SelectField' %}
+                            {{ field(class="form-select", disabled=true) }}
+                        {% else %}
+                            <!-- {% set display_value = field.data if field.data is not none and field.data == field.data else 'N/A' %} -->
+                             
+                           {% if field.data is none or field.data != field.data %} {# handles NaN and None #}
+                                <input type="text" class="form-control bg-light" readonly value="N/A">
+                            {% else %}
+                                {{ field(class="form-control bg-light", readonly=true) }}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+            <div id="commitButttonsSection" class="d-none mt-5 gap-2 justify-content-end">
+                {{ form.submit(class="btn btn-success", id="saveChanges") }}
+                <button type="button" value="cancel" class="btn btn-secondary" id="cancelChanges">Cancel</button>
+            </div>
+        </form>
+
+    </div>
+    
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<!-- script to handle update button click and make fields editable -->
+ <script>
+    const updateButton = document.getElementById('updateButton');
+    const saveChangesButton = document.getElementById('saveChanges');
+    const inputs = document.querySelectorAll('#patientDetailForm input, #patientDetailForm select');
+    const commitButtonsSection = document.getElementById('commitButttonsSection');
+    const cancelChanges = document.getElementById('cancelChanges');
+    const originalRecord = Array.from(inputs).map(input => input.value);
+
+    updateButton.addEventListener('click', () => {
+        inputs.forEach(el => {
+            el.removeAttribute('readonly')
+            el.removeAttribute('disabled')
+            el.classList.remove("bg-light")
+        })
+        commitButtonsSection.classList.replace('d-none', 'd-flex');
+    })
+
+    cancelChanges.addEventListener('click', () => {
+        inputs.forEach((input, index) => {
+            input.value = originalRecord[index];
+            input.setAttribute('readonly', true);
+            input.setAttribute('disabled', true);
+            input.classList.add("bg-light")
+        })
+
+        commitButtonsSection.classList.replace('d-flex', 'd-none');
+    })
+ </script>
+{% endblock %}
